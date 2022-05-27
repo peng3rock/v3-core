@@ -7,6 +7,8 @@ import './SafeCast.sol';
 import './TickMath.sol';
 import './LiquidityMath.sol';
 
+import "hardhat/console.sol";
+
 /// @title Tick
 /// @notice Contains functions for managing tick processes and relevant calculations
 library Tick {
@@ -16,8 +18,10 @@ library Tick {
     // info stored for each initialized individual tick
     struct Info {
         // the total position liquidity that references this tick
+        // 无符号，为正值
         uint128 liquidityGross;
         // amount of net liquidity added (subtracted) when tick is crossed from left to right (right to left),
+        // 有符号
         int128 liquidityNet;
         // fee growth per unit of liquidity on the _other_ side of this tick (relative to the current tick)
         // only has relative meaning, not absolute — the value depends on when the tick is initialized
@@ -45,6 +49,7 @@ library Tick {
         int24 minTick = (TickMath.MIN_TICK / tickSpacing) * tickSpacing;
         int24 maxTick = (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
         uint24 numTicks = uint24((maxTick - minTick) / tickSpacing) + 1;
+        // 一共有 numTicks 格， 每一格最多有 max / numTicks 流动性。
         return type(uint128).max / numTicks;
     }
 
@@ -125,11 +130,18 @@ library Tick {
         uint128 liquidityGrossBefore = info.liquidityGross;
         uint128 liquidityGrossAfter = LiquidityMath.addDelta(liquidityGrossBefore, liquidityDelta);
 
+        console.log("liquidityGrossBeffore = ");
+        console.logUint(liquidityGrossBefore);
+        console.log("liquidityGrossAfter = ");
+        console.logUint(liquidityGrossAfter);
+
         require(liquidityGrossAfter <= maxLiquidity, 'LO');
 
+        // 如果liquidityGross 变为非零或者归零，bitmap状态就会发生变化
         flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
 
         if (liquidityGrossBefore == 0) {
+            // 添加流动性时，假设初始化前交易手续费全部在 低于tick 范围内,便于计算
             // by convention, we assume that all growth before a tick was initialized happened _below_ the tick
             if (tick <= tickCurrent) {
                 info.feeGrowthOutside0X128 = feeGrowthGlobal0X128;
@@ -143,10 +155,16 @@ library Tick {
 
         info.liquidityGross = liquidityGrossAfter;
 
+        console.log("liquidityDelta");
+        console.logInt(liquidityDelta);
+        console.log("info.liquidityNet changed: B -> A");
+        console.logInt(info.liquidityNet);
+
         // when the lower (upper) tick is crossed left to right (right to left), liquidity must be added (removed)
         info.liquidityNet = upper
             ? int256(info.liquidityNet).sub(liquidityDelta).toInt128()
             : int256(info.liquidityNet).add(liquidityDelta).toInt128();
+        console.logInt(info.liquidityNet);
     }
 
     /// @notice Clears tick data
@@ -175,6 +193,7 @@ library Tick {
         uint32 time
     ) internal returns (int128 liquidityNet) {
         Tick.Info storage info = self[tick];
+        // f(o) 与 f(c)相对位置发生变化，所以反向计算。
         info.feeGrowthOutside0X128 = feeGrowthGlobal0X128 - info.feeGrowthOutside0X128;
         info.feeGrowthOutside1X128 = feeGrowthGlobal1X128 - info.feeGrowthOutside1X128;
         info.secondsPerLiquidityOutsideX128 = secondsPerLiquidityCumulativeX128 - info.secondsPerLiquidityOutsideX128;

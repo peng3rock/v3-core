@@ -38,12 +38,15 @@ library SwapMath {
         bool exactIn = amountRemaining >= 0;
 
         if (exactIn) {
+            // 扣除所需的手续费
             uint256 amountRemainingLessFee = FullMath.mulDiv(uint256(amountRemaining), 1e6 - feePips, 1e6);
+            // 通过价格差和L 计算出所需要的tokenIn 的数量
             amountIn = zeroForOne
                 ? SqrtPriceMath.getAmount0Delta(sqrtRatioTargetX96, sqrtRatioCurrentX96, liquidity, true)
                 : SqrtPriceMath.getAmount1Delta(sqrtRatioCurrentX96, sqrtRatioTargetX96, liquidity, true);
             if (amountRemainingLessFee >= amountIn) sqrtRatioNextX96 = sqrtRatioTargetX96;
             else
+                // 如果tokenIn 不足，就计算能够到达的价格
                 sqrtRatioNextX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
                     sqrtRatioCurrentX96,
                     liquidity,
@@ -64,6 +67,7 @@ library SwapMath {
                 );
         }
 
+        // 判断是否达到目标价格
         bool max = sqrtRatioTargetX96 == sqrtRatioNextX96;
 
         // get the input/output amounts

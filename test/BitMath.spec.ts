@@ -56,6 +56,9 @@ describe('BitMath', () => {
     it('2', async () => {
       expect(await bitMath.leastSignificantBit(2)).to.eq(1)
     })
+    it('24', async () => {
+      expect(await bitMath.leastSignificantBit(24)).to.eq(3)
+    })
     it('all powers of 2', async () => {
       const results = await Promise.all(
         [...Array(255)].map((_, i) => bitMath.leastSignificantBit(BigNumber.from(2).pow(i)))

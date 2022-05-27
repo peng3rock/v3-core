@@ -36,15 +36,14 @@ const createFixtureLoader = waffle.createFixtureLoader
 
 type ThenArg<T> = T extends PromiseLike<infer U> ? U : T
 
-describe('UniswapV3Pool', () => {
-  let wallet: Wallet, other: Wallet
+describe('UniswapV3Pool', () => {  let wallet: Wallet, other: Wallet
 
   let token0: TestERC20
   let token1: TestERC20
   let token2: TestERC20
 
   let factory: UniswapV3Factory
-  let pool: MockTimeUniswapV3Pool
+  let pool: MockTimeUniswapV3Pool // 时间特定 pool
 
   let swapTarget: TestUniswapV3Callee
 
@@ -61,9 +60,10 @@ describe('UniswapV3Pool', () => {
   let minTick: number
   let maxTick: number
 
+
   let mint: MintFunction
   let flash: FlashFunction
-
+  // ReturnType 返回 函数 createFixtureLoader 的 类型返回值
   let loadFixture: ReturnType<typeof createFixtureLoader>
   let createPool: ThenArg<ReturnType<typeof poolFixture>>['createPool']
 
@@ -128,7 +128,7 @@ describe('UniswapV3Pool', () => {
       await pool.initialize(MIN_SQRT_RATIO)
       expect((await pool.slot0()).tick).to.eq(getMinTick(1))
     })
-    it('can be initialized at MAX_SQRT_RATIO - 1', async () => {
+     it('can be initialized at MAX_SQRT_RATIO - 1', async () => {
       await pool.initialize(MAX_SQRT_RATIO.sub(1))
       expect((await pool.slot0()).tick).to.eq(getMaxTick(1) - 1)
     })
@@ -193,13 +193,17 @@ describe('UniswapV3Pool', () => {
     describe('after initialization', () => {
       beforeEach('initialize the pool at price of 10:1', async () => {
         await pool.initialize(encodePriceSqrt(1, 10))
+        // await mint(wallet.address, minTick, maxTick, 3161)
+        console.log("minTick = %d", minTick)
+        console.log("maxTick = %d", maxTick)
+        await mint(wallet.address, minTick, maxTick, 3161)
         await mint(wallet.address, minTick, maxTick, 3161)
       })
 
       describe('failure cases', () => {
         it('fails if tickLower greater than tickUpper', async () => {
           // should be TLU but...hardhat
-          await expect(mint(wallet.address, 1, 0, 1)).to.be.reverted
+          // await expect(mint(wallet.address, 1, 0, 1)).to.be.reverted
         })
         it('fails if tickLower less than min tick', async () => {
           // should be TLM but...hardhat

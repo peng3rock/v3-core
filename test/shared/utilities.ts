@@ -94,6 +94,8 @@ export type MintFunction = (
   tickUpper: BigNumberish,
   liquidity: BigNumberish
 ) => Promise<ContractTransaction>
+
+// TestUniswapV3Callee.sol 中的所有方法
 export interface PoolFunctions {
   swapToLowerPrice: SwapToPriceFunction
   swapToHigherPrice: SwapToPriceFunction

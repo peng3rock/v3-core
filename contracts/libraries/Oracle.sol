@@ -11,10 +11,13 @@ pragma solidity >=0.5.0 <0.8.0;
 library Oracle {
     struct Observation {
         // the block timestamp of the observation
+        // 时间t
         uint32 blockTimestamp;
+        // tick * t 累加
         // the tick accumulator, i.e. tick * time elapsed since the pool was first initialized
         int56 tickCumulative;
         // the seconds per liquidity, i.e. seconds elapsed / max(1, liquidity) since the pool was first initialized
+        // t / liguidity 累加
         uint160 secondsPerLiquidityCumulativeX128;
         // whether or not the observation is initialized
         bool initialized;
@@ -105,6 +108,7 @@ library Oracle {
     /// @param current The current next cardinality of the oracle array
     /// @param next The proposed next cardinality which will be populated in the oracle array
     /// @return next The next cardinality which will be populated in the oracle array
+    // 扩充Observation 数组,并未初始化
     function grow(
         Observation[65535] storage self,
         uint16 current,
